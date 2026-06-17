@@ -154,7 +154,7 @@ function MiniCumulativeBar({ data }) {
   const maxTotal = Math.max(...data.map(d => d.total)) || 1;
   
   return (
-      <div className="flex items-end h-full gap-2 w-full pt-4">
+      <div className="flex items-end h-full gap-2 w-full pt-8">
           {data.map((d, i) => {
               const innerTotal = d.total || 1;
               const hComp = (d.comp / innerTotal) * 100;
@@ -167,13 +167,26 @@ function MiniCumulativeBar({ data }) {
                   <div key={i} className={`flex flex-col h-full flex-1 group ${isLast ? 'opacity-100' : 'opacity-70 hover:opacity-100'} transition-all cursor-pointer`}>
                       <div className="relative w-full flex-1">
                           <div className="absolute bottom-0 left-0 w-full flex flex-col-reverse rounded-t-md overflow-hidden bg-slate-100 shadow-sm" style={{ height: `${(d.total/maxTotal)*100}%`, minHeight: '4px' }}>
-                              {hComp > 0 && <div style={{ height: `${hComp}%` }} className="bg-emerald-500 w-full hover:brightness-110 transition-all" title={`เสร็จ: ${d.comp}`}></div>}
-                              {hProg > 0 && <div style={{ height: `${hProg}%` }} className="bg-amber-400 w-full hover:brightness-110 transition-all" title={`กำลังทำ: ${d.prog}`}></div>}
-                              {hNew > 0 && <div style={{ height: `${hNew}%` }} className="bg-rose-500 w-full hover:brightness-110 transition-all" title={`งานใหม่: ${d.new}`}></div>}
-                              {hOther > 0 && <div style={{ height: `${hOther}%` }} className="bg-slate-400 w-full hover:brightness-110 transition-all" title={`อื่นๆ: ${d.other}`}></div>}
+                              {hComp > 0 && <div style={{ height: `${hComp}%` }} className="bg-emerald-500 w-full hover:brightness-110 transition-all flex items-center justify-center overflow-hidden" title={`เสร็จ: ${d.comp} (${hComp.toFixed(1)}%)`}>
+                                  {hComp > 15 && <span className="text-[8px] font-bold text-white/90 scale-75 origin-center">{hComp.toFixed(0)}%</span>}
+                              </div>}
+                              {hProg > 0 && <div style={{ height: `${hProg}%` }} className="bg-amber-400 w-full hover:brightness-110 transition-all flex items-center justify-center overflow-hidden" title={`กำลังทำ: ${d.prog} (${hProg.toFixed(1)}%)`}>
+                                  {hProg > 15 && <span className="text-[8px] font-bold text-amber-900/70 scale-75 origin-center">{hProg.toFixed(0)}%</span>}
+                              </div>}
+                              {hNew > 0 && <div style={{ height: `${hNew}%` }} className="bg-rose-500 w-full hover:brightness-110 transition-all flex items-center justify-center overflow-hidden" title={`งานใหม่: ${d.new} (${hNew.toFixed(1)}%)`}>
+                                  {hNew > 15 && <span className="text-[8px] font-bold text-white/90 scale-75 origin-center">{hNew.toFixed(0)}%</span>}
+                              </div>}
+                              {hOther > 0 && <div style={{ height: `${hOther}%` }} className="bg-slate-400 w-full hover:brightness-110 transition-all flex items-center justify-center overflow-hidden" title={`อื่นๆ: ${d.other} (${hOther.toFixed(1)}%)`}></div>}
                           </div>
-                          <div className="absolute w-full text-center text-[10px] font-bold text-slate-400 group-hover:text-slate-800 transition-all group-hover:-translate-y-0.5" style={{ bottom: `calc(${(d.total/maxTotal)*100}% + 4px)` }}>
-                              {d.total}
+                          
+                          {/* Label and Percentage above bar */}
+                          <div className="absolute w-full flex flex-col items-center justify-end text-center transition-all group-hover:-translate-y-1" style={{ bottom: `calc(${(d.total/maxTotal)*100}% + 4px)` }}>
+                              <span className="text-[10px] font-bold text-slate-500 group-hover:text-slate-800 leading-none mb-1">{d.total}</span>
+                              {d.total > 0 && (
+                                  <span className="text-[8px] font-black text-emerald-600 bg-emerald-50 px-1 py-0.5 rounded border border-emerald-200/60 shadow-sm leading-none whitespace-nowrap" title="อัตรางานที่เสร็จสมบูรณ์ (Completion Rate)">
+                                      {Math.round((d.comp/d.total)*100)}%
+                                  </span>
+                              )}
                           </div>
                       </div>
                       <div className="h-6 mt-1 border-t-2 border-slate-100 pt-1.5 text-[10px] font-bold text-slate-500 text-center truncate w-full group-hover:text-indigo-600 transition-colors group-hover:border-indigo-200">
