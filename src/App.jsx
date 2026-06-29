@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Upload, Activity, CheckCircle, Clock, AlertTriangle, Users, Calendar, BarChart3, Wrench, PlayCircle, FileSpreadsheet, Target, Timer, Trophy, ShieldCheck, Sparkles, PieChart, FileText } from 'lucide-react';
+import { Upload, Activity, CheckCircle, Clock, AlertTriangle, AlertCircle, Users, Calendar, BarChart3, Wrench, PlayCircle, FileSpreadsheet, Target, Timer, Trophy, ShieldCheck, Sparkles, PieChart, FileText } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer,
   PieChart as RechartsPieChart, Pie, Cell
@@ -214,6 +214,7 @@ export default function App() {
   const [filterMonths, setFilterMonths] = useState([]);
   const [filterDays, setFilterDays] = useState([]);
   const [filterAssignees, setFilterAssignees] = useState([]);
+  const [filterJobTypes, setFilterJobTypes] = useState([]);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -278,7 +279,7 @@ export default function App() {
         }
 
         if (validData.length > 0) {
-          const cleanedData = parsedData.map(row => ({ 
+          const cleanedData = validData.map(row => ({ 
               ...row, 
               REQUEST_DATE: parseDateValue(row.REQUEST_DATE || row['วันที่แจ้ง']),
               APPROVE_REQ_DATE: parseDateValue(row.APPROVE_REQ_DATE || row['วันที่อนุมัติแจ้งซ่อม'] || row.REQUEST_DATE || row['วันที่แจ้ง']),
@@ -290,7 +291,7 @@ export default function App() {
           }));
           
           setData(cleanedData);
-          setFilterYears([]); setFilterMonths([]); setFilterDays([]); setFilterAssignees([]);
+          setFilterYears([]); setFilterMonths([]); setFilterDays([]); setFilterAssignees([]); setFilterJobTypes([]);
           setShowWelcomeModal(false);
           setUploadSuccessCount(cleanedData.length); 
           setTimeout(() => setMounted(true), 300);
@@ -308,8 +309,8 @@ export default function App() {
   };
 
   // --- Filtering Options ---
-  const { years, months, days, assignees } = useMemo(() => {
-    const ySet = new Set(), mSet = new Set(), dSet = new Set(), aSet = new Set();
+  const { years, months, days, assignees, jobTypes } = useMemo(() => {
+    const ySet = new Set(), mSet = new Set(), dSet = new Set(), aSet = new Set(), jtSet = new Set();
     data.forEach(item => {
       const dateStr = item.APPROVE_REQ_DATE;
       if (dateStr && dateStr.length >= 10) {
@@ -322,12 +323,18 @@ export default function App() {
       let names = assignedToStr ? assignedToStr.split(',').map(n => n.trim()).filter(n => n && n !== '-' && n.toUpperCase() !== 'N/A') : [];
       if (names.length === 0) aSet.add('Not Assigned');
       else names.forEach(name => aSet.add(name));
+
+      // Extract Job Types
+      const jtStr = item.JOB_TYPE ? String(item.JOB_TYPE).trim() : '';
+      if (jtStr) jtSet.add(jtStr);
+      else jtSet.add('ไม่ระบุ (Unspecified)');
     });
     return { 
       years: Array.from(ySet).sort(), 
       months: Array.from(mSet).sort(), 
       days: Array.from(dSet).sort(),
-      assignees: Array.from(aSet).sort((a, b) => a === 'Not Assigned' ? -1 : b === 'Not Assigned' ? 1 : a.localeCompare(b))
+      assignees: Array.from(aSet).sort((a, b) => a === 'Not Assigned' ? -1 : b === 'Not Assigned' ? 1 : a.localeCompare(b)),
+      jobTypes: Array.from(jtSet).sort()
     };
   }, [data]);
 
@@ -353,9 +360,16 @@ export default function App() {
           else matchAssignee = names.some(name => filterAssignees.includes(name));
       }
 
-      return matchYear && matchMonth && matchDay && matchAssignee;
+      let matchJobType = true;
+      if (filterJobTypes.length > 0) {
+          const jtStr = item.JOB_TYPE ? String(item.JOB_TYPE).trim() : '';
+          const mappedJt = jtStr ? jtStr : 'ไม่ระบุ (Unspecified)';
+          matchJobType = filterJobTypes.includes(mappedJt);
+      }
+
+      return matchYear && matchMonth && matchDay && matchAssignee && matchJobType;
     });
-  }, [data, filterYears, filterMonths, filterDays, filterAssignees]);
+  }, [data, filterYears, filterMonths, filterDays, filterAssignees, filterJobTypes]);
 
   // --- Executive Snapshot (Cumulative Trends) ---
   const trendStats = useMemo(() => {
@@ -966,8 +980,9 @@ export default function App() {
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-indigo-600"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
             <span>กรองข้อมูล (วันที่แผนกอนุมัติแจ้งซ่อม)</span>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 w-full">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5 w-full">
             <MultiSelectDropdown label="ผู้รับผิดชอบ (Assignee)" options={assignees} selected={filterAssignees} onChange={setFilterAssignees} />
+            <MultiSelectDropdown label="ประเภทงาน (Job Type)" options={jobTypes} selected={filterJobTypes} onChange={setFilterJobTypes} />
             <MultiSelectDropdown label="ปี (Year)" options={years} selected={filterYears} onChange={setFilterYears} />
             <MultiSelectDropdown label="เดือน (Month)" options={months} selected={filterMonths} onChange={setFilterMonths} formatOption={(m) => `เดือน ${m}`} />
             <MultiSelectDropdown label="วันที่ (Day)" options={days} selected={filterDays} onChange={setFilterDays} formatOption={(d) => `วันที่ ${d}`} />
@@ -1171,7 +1186,7 @@ export default function App() {
                 </div>
               </div>
               
-              <div className="flex flex-col sm:flex-row items-center gap-10 w-full justify-center">
+              <div className="flex items-center gap-8 w-full justify-center">
                 <div className="relative w-44 h-44">
                   {efficiencyData.activeTotalWithDue > 0 ? (
                     <>
@@ -1207,7 +1222,7 @@ export default function App() {
                 <div className="flex flex-col gap-5 w-full sm:w-auto">
                   <div className="bg-white/60 backdrop-blur border border-rose-100 p-4 rounded-2xl flex items-center gap-4 shadow-sm hover:shadow-md transition-shadow">
                     <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-rose-400 to-red-500 flex items-center justify-center text-white shadow-lg shadow-rose-200">
-                      <AlertTriangle size={20} />
+                      <AlertCircle size={20} />
                     </div>
                     <div>
                       <p className="text-[11px] font-bold text-rose-800 uppercase tracking-wide">เกินกำหนด</p>
