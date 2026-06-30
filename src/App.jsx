@@ -1368,6 +1368,33 @@ export default function App() {
                      </div>
                   </div>
                 ))}
+                {/* === ส่วนเพิ่มใหม่: สรุปค่าเฉลี่ยรวมด้านล่าง === */}
+          {(() => {
+            const totalJobs = stdComplianceStats.reduce((sum, s) => sum + s.total, 0);
+            const passedJobs = stdComplianceStats.reduce((sum, s) => sum + s.passed, 0);
+            const passRate = totalJobs > 0 ? (passedJobs / totalJobs) * 100 : 0;
+            
+            if (totalJobs === 0) return null;
+            
+            return (
+              <div className="mt-5 pt-5 border-t border-slate-200/60 flex items-center justify-between">
+                  <div className="flex flex-col">
+                      <span className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">อัตราผ่านเกณฑ์เฉลี่ยรวม</span>
+                      <span className="text-[10px] font-medium text-slate-400 mt-0.5">จากงานที่วัดผลได้ทั้งหมด {totalJobs} รายการ</span>
+                  </div>
+                  <div className="flex items-center gap-4">
+                      <div className="hidden sm:flex flex-col items-end mr-2">
+                         <span className="text-[10px] font-bold text-emerald-600">ผ่าน: {passedJobs}</span>
+                         <span className="text-[10px] font-bold text-rose-500">เกิน: {totalJobs - passedJobs}</span>
+                      </div>
+                      <div className="bg-gradient-to-r from-emerald-50 to-teal-50 px-4 py-2 rounded-xl border border-emerald-100 flex items-center shadow-sm">
+                          <span className="text-2xl font-black text-emerald-600">{passRate.toFixed(1)}<span className="text-sm font-bold text-emerald-400 ml-0.5">%</span></span>
+                      </div>
+                  </div>
+              </div>
+            );
+          })()}
+          {/* === จบส่วนเพิ่มใหม่ === */}
               </div>
             </div>
           </div>
